@@ -10,6 +10,7 @@ import sys
 import csv
 import argparse
 import re
+import random
 from typing import List, Dict, Tuple
 from deep_translator import GoogleTranslator
 from gtts import gTTS
@@ -262,6 +263,9 @@ def main():
     # Normal mode: generate flashcards
     # Load words from CSV file
     words = load_words_from_csv(csv_filename)
+
+    # Randomize the order of words
+    random.shuffle(words)
 
     # Create deck name from filename
     deck_name = get_deck_name_from_filename(csv_filename)
