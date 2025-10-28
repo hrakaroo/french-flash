@@ -39,6 +39,9 @@ audio/
 # Environment
 .env
 
+# Google API credentials
+credentials.json
+
 # Data files
 !example_words.csv
 output/

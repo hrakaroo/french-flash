@@ -16,6 +16,8 @@ from deep_translator import GoogleTranslator
 from gtts import gTTS
 import genanki
 import hashlib
+import gspread
+from google.oauth2.service_account import Credentials
 import config
 
 
@@ -166,6 +168,77 @@ def load_words_from_csv(filename: str = 'example_words.csv') -> List[Dict[str, s
     return words
 
 
+def get_google_sheets_client():
+    """Create and return authenticated Google Sheets client."""
+    try:
+        scopes = [
+            'https://www.googleapis.com/auth/spreadsheets.readonly',
+            'https://www.googleapis.com/auth/drive.readonly'
+        ]
+
+        creds = Credentials.from_service_account_file(
+            config.GOOGLE_CREDENTIALS_FILE,
+            scopes=scopes
+        )
+
+        return gspread.authorize(creds)
+
+    except FileNotFoundError:
+        print(f"Error: Credentials file '{config.GOOGLE_CREDENTIALS_FILE}' not found.")
+        print("Please follow the setup instructions in GOOGLE_SHEETS_SETUP.md")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error authenticating with Google Sheets: {e}")
+        sys.exit(1)
+
+
+def get_all_sheet_names(spreadsheet_id: str) -> List[str]:
+    """Get list of all sheet names in a spreadsheet."""
+    try:
+        client = get_google_sheets_client()
+        spreadsheet = client.open_by_key(spreadsheet_id)
+        return [worksheet.title for worksheet in spreadsheet.worksheets()]
+    except gspread.exceptions.SpreadsheetNotFound:
+        print(f"Error: Spreadsheet with ID '{spreadsheet_id}' not found.")
+        print("Check that the spreadsheet ID is correct and shared with your service account.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error getting sheet names: {e}")
+        sys.exit(1)
+
+
+def load_words_from_sheet(spreadsheet_id: str, sheet_name: str) -> List[Dict[str, str]]:
+    """Load words from Google Sheet with English and French columns."""
+    try:
+        client = get_google_sheets_client()
+        spreadsheet = client.open_by_key(spreadsheet_id)
+        worksheet = spreadsheet.worksheet(sheet_name)
+
+        # Get all records as list of dictionaries
+        records = worksheet.get_all_records()
+
+        # Convert to our expected format
+        words = []
+        for row in records:
+            words.append({
+                'English': str(row.get('English', '')),
+                'French': str(row.get('French', '')).strip()
+            })
+
+        return words
+
+    except gspread.exceptions.SpreadsheetNotFound:
+        print(f"Error: Spreadsheet with ID '{spreadsheet_id}' not found.")
+        print("Check that the spreadsheet ID is correct and shared with your service account.")
+        sys.exit(1)
+    except gspread.exceptions.WorksheetNotFound:
+        print(f"Error: Sheet '{sheet_name}' not found in spreadsheet.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error loading Google Sheet: {e}")
+        sys.exit(1)
+
+
 def get_deck_name_from_filename(filename: str) -> str:
     """Convert filename to deck name (e.g., 'example_words.csv' -> 'Example Words')."""
     # Get just the basename without path
@@ -246,48 +319,129 @@ def main():
         action='store_true',
         help='Translation mode: translate missing French words and update CSV (does not generate cards)'
     )
+    parser.add_argument(
+        '-s', '--sheet',
+        metavar='SPREADSHEET_ID',
+        help='Use Google Sheets instead of CSV. Provide spreadsheet ID.'
+    )
+    parser.add_argument(
+        '-n', '--sheet-name',
+        metavar='SHEET_NAME',
+        default=None,
+        help='Name of specific sheet to use in Google Spreadsheet (default: process all sheets)'
+    )
 
     args = parser.parse_args()
-    csv_filename = args.csv_file
 
-    # Check if file exists
-    if not os.path.exists(csv_filename):
-        print(f"Error: File '{csv_filename}' not found.")
-        sys.exit(1)
+    # Determine input source: Google Sheets or CSV
+    using_sheets = args.sheet is not None
 
-    # Translation mode: just translate and update CSV
-    if args.translate:
-        translate_csv(csv_filename)
+    if using_sheets:
+        # Google Sheets mode
+        spreadsheet_id = args.sheet
+        sheet_name = args.sheet_name
+
+        # Translation mode not supported for Google Sheets yet
+        if args.translate:
+            print("Error: Translation mode (-t) is not supported with Google Sheets.")
+            print("Please translate directly in the Google Sheet or use CSV files.")
+            sys.exit(1)
+
+        print("French Flashcard Generator (Google Sheets)")
+        print("=" * 50)
+        print(f"Spreadsheet ID: {spreadsheet_id}")
+
+        # Determine which sheets to process
+        if sheet_name:
+            # Process single sheet
+            sheet_names = [sheet_name]
+            print(f"Sheet: {sheet_name}")
+        else:
+            # Process all sheets
+            print("Getting all sheets from spreadsheet...")
+            sheet_names = get_all_sheet_names(spreadsheet_id)
+            print(f"Found {len(sheet_names)} sheets: {', '.join(sheet_names)}")
+
+        print("\n" + "=" * 50)
+
+        # Process each sheet
+        for idx, current_sheet_name in enumerate(sheet_names, 1):
+            if len(sheet_names) > 1:
+                print(f"\n[{idx}/{len(sheet_names)}] Processing sheet: {current_sheet_name}")
+                print("-" * 50)
+
+            # Load words from Google Sheets
+            words = load_words_from_sheet(spreadsheet_id, current_sheet_name)
+
+            if not words:
+                print(f"Skipping empty sheet: {current_sheet_name}\n")
+                continue
+
+            # Randomize the order of words
+            random.shuffle(words)
+
+            # Create deck name from sheet name
+            deck_name = current_sheet_name.replace('_', ' ').title()
+
+            # Get output filename from sheet name (preserve case, replace spaces with underscores)
+            output_filename = f"{current_sheet_name.replace(' ', '_')}.apkg"
+
+            print(f"Deck: {deck_name}")
+            print(f"Processing {len(words)} words...\n")
+
+            generator = FrenchFlashcardGenerator(deck_name=deck_name)
+            results = generator.process_words(words)
+
+            # Save outputs
+            print("\n" + "-" * 50)
+            generator.save_deck(output_filename)
+
+        print("\n" + "=" * 50)
+        print("\nDone! Import the .apkg file(s) into Anki to use your flashcards.")
         return
 
-    # Normal mode: generate flashcards
-    # Load words from CSV file
-    words = load_words_from_csv(csv_filename)
+    else:
+        # CSV mode
+        csv_filename = args.csv_file
 
-    # Randomize the order of words
-    random.shuffle(words)
+        # Check if file exists
+        if not os.path.exists(csv_filename):
+            print(f"Error: File '{csv_filename}' not found.")
+            sys.exit(1)
 
-    # Create deck name from filename
-    deck_name = get_deck_name_from_filename(csv_filename)
+        # Translation mode: just translate and update CSV
+        if args.translate:
+            translate_csv(csv_filename)
+            return
 
-    # Get output filename from input basename
-    basename = os.path.basename(csv_filename)
-    output_filename = basename.replace('.csv', '.apkg')
+        # Normal mode: generate flashcards
+        # Load words from CSV file
+        words = load_words_from_csv(csv_filename)
 
-    print("French Flashcard Generator")
-    print("=" * 50)
-    print(f"Input file: {csv_filename}")
-    print(f"Deck: {deck_name}")
-    print(f"Processing {len(words)} words...\n")
+        # Randomize the order of words
+        random.shuffle(words)
 
-    generator = FrenchFlashcardGenerator(deck_name=deck_name)
-    results = generator.process_words(words)
+        # Create deck name from filename
+        deck_name = get_deck_name_from_filename(csv_filename)
 
-    # Save outputs
-    print("\n" + "=" * 50)
-    generator.save_deck(output_filename)
+        # Get output filename from input basename
+        basename = os.path.basename(csv_filename)
+        output_filename = basename.replace('.csv', '.apkg')
 
-    print("\nDone! Import the .apkg file into Anki to use your flashcards.")
+        print("French Flashcard Generator")
+        print("=" * 50)
+        print(f"Input file: {csv_filename}")
+        print(f"Deck: {deck_name}")
+        print(f"Processing {len(words)} words...\n")
+
+        generator = FrenchFlashcardGenerator(deck_name=deck_name)
+        results = generator.process_words(words)
+
+        # Save outputs
+        print("\n" + "=" * 50)
+        generator.save_deck(output_filename)
+
+        print("\nDone! Import the .apkg file into Anki to use your flashcards.")
 
 
 if __name__ == "__main__":

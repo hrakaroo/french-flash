@@ -1,0 +1,1 @@
+python french_flashcards.py -s 1tJ25adsWUvfZkWGJmvCYfu1gVHqAzt_4P3nHZyhJn8Y

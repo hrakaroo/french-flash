@@ -9,6 +9,7 @@ A Python tool that generates Anki flashcards for learning French vocabulary. It 
 - 📇 Creates Anki flashcard decks (.apkg) ready to import
 - ✏️ Supports pre-filled French translations or automatic lookup
 - 🎯 Two-step workflow: translate first, then generate cards
+- ☁️ **NEW**: Google Sheets support - edit vocabulary lists online from anywhere!
 
 ## Installation
 
@@ -125,6 +126,8 @@ deactivate
 
 ## Quick Reference
 
+### CSV Files (Local)
+
 ```bash
 # Activate virtual environment
 source venv/bin/activate
@@ -132,7 +135,7 @@ source venv/bin/activate
 # Translate empty French entries (updates CSV)
 python french_flashcards.py -t deck/my_words.csv
 
-# Generate flashcard deck
+# Generate flashcard deck from CSV
 python french_flashcards.py deck/my_words.csv
 
 # Show help
@@ -141,6 +144,26 @@ python french_flashcards.py --help
 # Deactivate virtual environment when done
 deactivate
 ```
+
+### Google Sheets (Online)
+
+```bash
+# Activate virtual environment
+source venv/bin/activate
+
+# Generate flashcard decks from ALL sheets in spreadsheet
+python french_flashcards.py -s YOUR_SPREADSHEET_ID
+
+# Generate from only a specific sheet
+python french_flashcards.py -s YOUR_SPREADSHEET_ID -n "Calendar"
+
+# Deactivate virtual environment when done
+deactivate
+```
+
+**Note**: By default, the script processes **all sheets** in your spreadsheet and generates a separate deck for each one!
+
+**📖 [Google Sheets Setup Guide](GOOGLE_SHEETS_SETUP.md)** - Complete instructions for setting up Google Sheets API access
 
 ## Output Files
 
@@ -186,6 +209,8 @@ french-flash/
 - 📝 Text in parentheses (e.g., "chat (m)") appears on cards but is excluded from audio
 - ✏️ You can manually edit translations in the CSV after running `-t` flag
 - 🔊 Audio files are automatically embedded in the .apkg file
+- ☁️ Google Sheets mode requires API setup (see [GOOGLE_SHEETS_SETUP.md](GOOGLE_SHEETS_SETUP.md))
+- 🔀 Flashcards are randomized each time you generate a deck
 
 ## License
 

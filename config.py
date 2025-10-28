@@ -17,3 +17,6 @@ TTS_SLOW = False  # Set to True for slower pronunciation
 # Translation settings
 SOURCE_LANG = "en"
 TARGET_LANG = "fr"
+
+# Google Sheets settings
+GOOGLE_CREDENTIALS_FILE = "credentials.json"  # Path to your Google service account credentials
