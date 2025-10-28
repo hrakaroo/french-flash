@@ -11,8 +11,8 @@ import csv
 import argparse
 import re
 import random
-from typing import List, Dict, Tuple
-from deep_translator import GoogleTranslator
+import json
+from typing import List, Dict, Tuple, Optional
 from gtts import gTTS
 import genanki
 import hashlib
@@ -25,7 +25,6 @@ class FrenchFlashcardGenerator:
     """Generate French flashcards with audio pronunciation."""
 
     def __init__(self, deck_name: str = 'French Vocabulary'):
-        self.translator = GoogleTranslator(source=config.SOURCE_LANG, target=config.TARGET_LANG)
         self.audio_files = []
         self.deck_name = deck_name
 
@@ -54,23 +53,17 @@ class FrenchFlashcardGenerator:
             deck_id,
             deck_name)
 
-    def translate_word(self, english: str, french: str = None) -> str:
+    def get_french_translation(self, english: str, french: str = None) -> str:
         """
-        Get French translation.
-        If french is provided and not empty, return it.
-        Otherwise, translate the English word/phrase.
+        Get French translation from provided value.
+        French translation must be provided - no automatic lookup.
         """
-        # If French translation is provided, use it
         if french and french.strip():
             return french.strip()
 
-        # Otherwise, translate it
-        try:
-            translation = self.translator.translate(english)
-            return translation
-        except Exception as e:
-            print(f"Error translating '{english}': {e}")
-            return english
+        # No French translation provided - this is an error
+        print(f"Error: Missing French translation for '{english}'")
+        return ""
 
     def generate_audio(self, text: str, filename: str) -> str:
         """Generate audio file for French text using Google TTS."""
@@ -100,9 +93,9 @@ class FrenchFlashcardGenerator:
 
     def process_words(self, words: List[Dict[str, str]]) -> Dict[str, Dict[str, str]]:
         """
-        Process a list of English words/phrases with optional French translations.
+        Process a list of English words/phrases with French translations.
         words: List of dicts with 'English' and 'French' keys
-        Returns a dictionary with translation details.
+        Returns a dictionary with processing details.
         """
         results = {}
 
@@ -110,14 +103,15 @@ class FrenchFlashcardGenerator:
             english = item['English']
             french_provided = item.get('French', '').strip()
 
-            # Show whether translation was provided or will be looked up
-            if french_provided:
-                print(f"Processing: {english} (French provided)")
-            else:
-                print(f"Processing: {english} (looking up translation)")
+            # Get French translation (must be provided)
+            french = self.get_french_translation(english, french_provided)
 
-            # Get French translation (use provided or translate)
-            french = self.translate_word(english, french_provided)
+            # Skip if no French translation
+            if not french:
+                print(f"Skipping: {english} (no French translation provided)")
+                continue
+
+            print(f"Processing: {english}")
 
             # Generate audio filename (use hash to avoid special characters)
             audio_filename = f"{hashlib.md5(english.encode()).hexdigest()}.mp3"
@@ -130,8 +124,7 @@ class FrenchFlashcardGenerator:
 
             results[english] = {
                 'french': french,
-                'audio': generated_audio,
-                'was_provided': bool(french_provided)
+                'audio': generated_audio
             }
 
             print(f"  → {french}")
@@ -239,6 +232,60 @@ def load_words_from_sheet(spreadsheet_id: str, sheet_name: str) -> List[Dict[str
         sys.exit(1)
 
 
+def compute_sheet_hash(words: List[Dict[str, str]]) -> str:
+    """Compute hash of sheet content for caching."""
+    # Create a deterministic string representation of the data
+    content = json.dumps(words, sort_keys=True, ensure_ascii=False)
+    return hashlib.md5(content.encode('utf-8')).hexdigest()
+
+
+def load_cache() -> Dict[str, Dict[str, str]]:
+    """Load cache from disk."""
+    if os.path.exists(config.SHEET_CACHE_FILE):
+        try:
+            with open(config.SHEET_CACHE_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Warning: Could not load cache file: {e}")
+            return {}
+    return {}
+
+
+def save_cache(cache: Dict[str, Dict[str, str]]):
+    """Save cache to disk."""
+    try:
+        with open(config.SHEET_CACHE_FILE, 'w', encoding='utf-8') as f:
+            json.dump(cache, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"Warning: Could not save cache file: {e}")
+
+
+def is_sheet_cached(spreadsheet_id: str, sheet_name: str, current_hash: str) -> bool:
+    """Check if sheet content matches cached hash."""
+    cache = load_cache()
+    cache_key = f"{spreadsheet_id}:{sheet_name}"
+
+    if cache_key in cache:
+        cached_entry = cache[cache_key]
+        return cached_entry.get('hash') == current_hash
+
+    return False
+
+
+def update_cache(spreadsheet_id: str, sheet_name: str, content_hash: str, output_file: str):
+    """Update cache with new sheet hash and output file."""
+    cache = load_cache()
+    cache_key = f"{spreadsheet_id}:{sheet_name}"
+
+    cache[cache_key] = {
+        'hash': content_hash,
+        'output_file': output_file,
+        'last_generated': os.path.getmtime(os.path.join(config.OUTPUT_DIR, output_file)) if os.path.exists(os.path.join(config.OUTPUT_DIR, output_file)) else None
+    }
+
+    save_cache(cache)
+
+
 def get_deck_name_from_filename(filename: str) -> str:
     """Convert filename to deck name (e.g., 'example_words.csv' -> 'Example Words')."""
     # Get just the basename without path
@@ -249,57 +296,6 @@ def get_deck_name_from_filename(filename: str) -> str:
     name = name.replace('_', ' ')
     # Capitalize each word
     return name.title()
-
-
-def translate_csv(filename: str):
-    """Translate missing French words in CSV and update the file."""
-    print("Translation Mode")
-    print("=" * 50)
-    print(f"Processing file: {filename}\n")
-
-    # Load existing CSV
-    words = load_words_from_csv(filename)
-
-    # Create translator
-    translator = GoogleTranslator(source=config.SOURCE_LANG, target=config.TARGET_LANG)
-
-    # Track changes
-    translations_made = 0
-
-    # Translate missing entries
-    updated_words = []
-    for item in words:
-        english = item['English']
-        french = item['French']
-
-        if not french or not french.strip():
-            # Translate it
-            try:
-                french = translator.translate(english)
-                print(f"Translating: {english} → {french}")
-                translations_made += 1
-            except Exception as e:
-                print(f"Error translating '{english}': {e}")
-                french = ""
-        else:
-            print(f"Keeping: {english} → {french}")
-
-        updated_words.append({
-            'English': english,
-            'French': french
-        })
-
-    # Write back to CSV
-    with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['English', 'French']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(updated_words)
-
-    print("\n" + "=" * 50)
-    print(f"Translations made: {translations_made}")
-    print(f"CSV file updated: {filename}")
-    print("\nRun without -t flag to generate flashcards.")
 
 
 def main():
@@ -313,11 +309,6 @@ def main():
         nargs='?',
         default='basic_french.csv',
         help='CSV file with English/French words (default: basic_french.csv)'
-    )
-    parser.add_argument(
-        '-t', '--translate',
-        action='store_true',
-        help='Translation mode: translate missing French words and update CSV (does not generate cards)'
     )
     parser.add_argument(
         '-s', '--sheet',
@@ -340,12 +331,6 @@ def main():
         # Google Sheets mode
         spreadsheet_id = args.sheet
         sheet_name = args.sheet_name
-
-        # Translation mode not supported for Google Sheets yet
-        if args.translate:
-            print("Error: Translation mode (-t) is not supported with Google Sheets.")
-            print("Please translate directly in the Google Sheet or use CSV files.")
-            sys.exit(1)
 
         print("French Flashcard Generator (Google Sheets)")
         print("=" * 50)
@@ -377,14 +362,24 @@ def main():
                 print(f"Skipping empty sheet: {current_sheet_name}\n")
                 continue
 
+            # Get output filename from sheet name (preserve case, replace spaces with underscores)
+            output_filename = f"{current_sheet_name.replace(' ', '_')}.apkg"
+            output_path = os.path.join(config.OUTPUT_DIR, output_filename)
+
+            # Compute hash of sheet content
+            content_hash = compute_sheet_hash(words)
+
+            # Check if sheet is already cached and output file exists
+            if is_sheet_cached(spreadsheet_id, current_sheet_name, content_hash) and os.path.exists(output_path):
+                print(f"✓ Skipping '{current_sheet_name}' - no changes detected (using cached {output_filename})")
+                continue
+
+            # Sheet has changed or doesn't exist, generate deck
             # Randomize the order of words
             random.shuffle(words)
 
             # Create deck name from sheet name
             deck_name = current_sheet_name.replace('_', ' ').title()
-
-            # Get output filename from sheet name (preserve case, replace spaces with underscores)
-            output_filename = f"{current_sheet_name.replace(' ', '_')}.apkg"
 
             print(f"Deck: {deck_name}")
             print(f"Processing {len(words)} words...\n")
@@ -395,6 +390,9 @@ def main():
             # Save outputs
             print("\n" + "-" * 50)
             generator.save_deck(output_filename)
+
+            # Update cache with new hash
+            update_cache(spreadsheet_id, current_sheet_name, content_hash, output_filename)
 
         print("\n" + "=" * 50)
         print("\nDone! Import the .apkg file(s) into Anki to use your flashcards.")
@@ -409,12 +407,6 @@ def main():
             print(f"Error: File '{csv_filename}' not found.")
             sys.exit(1)
 
-        # Translation mode: just translate and update CSV
-        if args.translate:
-            translate_csv(csv_filename)
-            return
-
-        # Normal mode: generate flashcards
         # Load words from CSV file
         words = load_words_from_csv(csv_filename)
 

@@ -80,7 +80,8 @@ Your Google Sheet should have two columns with headers:
 
 - **First row must be headers**: `English` and `French`
 - **English column** (required): The English word or phrase
-- **French column** (optional): Leave empty for auto-translation, or provide your own
+- **French column** (required): The French translation
+- Rows without French translations will be skipped
 - Each sheet in your spreadsheet can be a different deck
 
 ### 7. Install Dependencies
@@ -124,6 +125,32 @@ python french_flashcards.py -s 1A2B3C4D5E6F7G8H9I0J -n "Common Phrases"
 ```
 
 **Default Behavior**: When you don't specify a sheet name with `-n`, the script will automatically process **all sheets** in your spreadsheet and generate a separate `.apkg` deck file for each one!
+
+### Caching & Performance
+
+The script uses intelligent caching to avoid regenerating decks when sheets haven't changed:
+
+```bash
+# First run - generates all decks
+python french_flashcards.py -s YOUR_SPREADSHEET_ID
+
+# Second run - skips unchanged sheets
+python french_flashcards.py -s YOUR_SPREADSHEET_ID
+# Output: ✓ Skipping 'Calendar' - no changes detected (using cached Calendar.apkg)
+```
+
+**How it works:**
+- Creates a hash of each sheet's content
+- Stores hashes in `.sheet_cache.json`
+- On subsequent runs, checks if content changed
+- Only regenerates decks for modified sheets
+
+**Benefits:**
+- Faster execution - skips unchanged sheets
+- Saves API calls to Google Sheets
+- Reduces audio file regeneration
+
+**Clear the cache:** Simply delete `.sheet_cache.json` to force regeneration of all decks.
 
 ## Spreadsheet Organization Tips
 
@@ -181,10 +208,9 @@ This will automatically generate 4 separate deck files:
 | Edit anywhere | ❌ No | ✅ Yes |
 | Requires internet | ❌ No | ✅ Yes |
 | Setup complexity | ✅ Simple | ⚠️ Moderate |
-| Translation mode | ✅ Yes | ❌ No* |
+| Intelligent caching | ❌ No | ✅ Yes |
 | Collaboration | ❌ No | ✅ Yes |
-
-*For Google Sheets, translate directly in the sheet or export to CSV for translation mode.
+| Multi-sheet support | ❌ No | ✅ Yes |
 
 ## Still Using CSV?
 

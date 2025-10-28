@@ -1,15 +1,15 @@
 # French Flashcard Generator
 
-A Python tool that generates Anki flashcards for learning French vocabulary. It can auto-translate English words/phrases to French or use your provided translations, and generates audio pronunciation files for all entries.
+A Python tool that generates Anki flashcards for learning French vocabulary. Provide your English-French vocabulary pairs, and it generates audio pronunciation files and creates ready-to-import Anki decks.
 
 ## Features
 
-- 🔄 Translates English words/phrases to French using Google Translate (or use your own translations)
 - 🔊 Generates audio pronunciation files using Google Text-to-Speech
 - 📇 Creates Anki flashcard decks (.apkg) ready to import
-- ✏️ Supports pre-filled French translations or automatic lookup
-- 🎯 Two-step workflow: translate first, then generate cards
-- ☁️ **NEW**: Google Sheets support - edit vocabulary lists online from anywhere!
+- ✏️ Requires French translations to be provided for all entries
+- 🔀 Randomizes flashcard order each time you generate
+- ☁️ Google Sheets support - edit vocabulary lists online from anywhere!
+- ⚡ Intelligent caching - skips regenerating unchanged decks
 
 ## Installation
 
@@ -53,15 +53,15 @@ Create a CSV file with two columns: `English` and `French`
 
 ```csv
 English,French
-hello,
-goodbye,
-cat,
-dog,
-thank you,
+hello,Bonjour
+goodbye,au revoir
+cat,chat
+dog,chien
+thank you,merci
 ```
 
 - **English column** (required): The English word or phrase
-- **French column** (optional): Leave empty for auto-translation, or provide your own
+- **French column** (required): The French translation
 
 Save this file (e.g., `deck/my_words.csv`)
 
@@ -77,26 +77,9 @@ source venv/bin/activate
 
 You should see `(venv)` appear in your terminal prompt.
 
-### Step 3: Translate Missing Words
+### Step 3: Generate the Anki Deck
 
-Run the script with the `-t` flag to translate any empty French fields:
-
-```bash
-python french_flashcards.py -t deck/my_words.csv
-```
-
-This will:
-- Translate all empty French entries
-- Update the CSV file with the translations
-- Show you what was translated
-
-### Step 4: Review and Edit Translations (Optional)
-
-Open `deck/my_words.csv` and review the auto-generated translations. You can edit any that need correction.
-
-### Step 5: Generate the Anki Deck
-
-Run the script without the `-t` flag to create the flashcard deck:
+Run the script to create the flashcard deck:
 
 ```bash
 python french_flashcards.py deck/my_words.csv
@@ -107,7 +90,7 @@ This will:
 - Create an Anki deck file at `output/my_words.apkg`
 - Note: Text in parentheses is kept on the card but not included in audio
 
-### Step 6: Import into Anki
+### Step 4: Import into Anki
 
 1. Open Anki
 2. Click "File" → "Import"
@@ -116,7 +99,7 @@ This will:
 
 Your French flashcards are now ready to study!
 
-### Step 7: Deactivate Virtual Environment
+### Step 5: Deactivate Virtual Environment
 
 When finished:
 
@@ -131,9 +114,6 @@ deactivate
 ```bash
 # Activate virtual environment
 source venv/bin/activate
-
-# Translate empty French entries (updates CSV)
-python french_flashcards.py -t deck/my_words.csv
 
 # Generate flashcard deck from CSV
 python french_flashcards.py deck/my_words.csv
@@ -162,6 +142,8 @@ deactivate
 ```
 
 **Note**: By default, the script processes **all sheets** in your spreadsheet and generates a separate deck for each one!
+
+**Caching**: The script automatically caches sheet content hashes. On subsequent runs, it will skip regenerating decks for sheets that haven't changed, saving time and API calls.
 
 **📖 [Google Sheets Setup Guide](GOOGLE_SHEETS_SETUP.md)** - Complete instructions for setting up Google Sheets API access
 
@@ -200,17 +182,18 @@ french-flash/
 ## Requirements
 
 - Python 3.13 or compatible version
-- Internet connection (for translation and TTS)
+- Internet connection (for TTS and Google Sheets API)
 
 ## Notes
 
 - ⚠️ Always activate the virtual environment before running the script
-- 🌐 Requires an internet connection for translation (when needed) and text-to-speech
+- 🌐 Requires an internet connection for text-to-speech and Google Sheets API
 - 📝 Text in parentheses (e.g., "chat (m)") appears on cards but is excluded from audio
-- ✏️ You can manually edit translations in the CSV after running `-t` flag
+- ✏️ All French translations must be provided in your CSV or Google Sheet
 - 🔊 Audio files are automatically embedded in the .apkg file
 - ☁️ Google Sheets mode requires API setup (see [GOOGLE_SHEETS_SETUP.md](GOOGLE_SHEETS_SETUP.md))
 - 🔀 Flashcards are randomized each time you generate a deck
+- ⚡ Intelligent caching skips regenerating unchanged Google Sheets decks
 
 ## License
 

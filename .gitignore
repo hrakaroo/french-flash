@@ -42,6 +42,9 @@ audio/
 # Google API credentials
 credentials.json
 
+# Cache files
+.sheet_cache.json
+
 # Data files
 !example_words.csv
 output/
