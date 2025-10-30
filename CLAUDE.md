@@ -65,19 +65,24 @@ python french_flashcards.py -s SPREADSHEET_ID -n "Calendar"
 ### Key Implementation Details
 1. **Deck ID Generation**: Uses MD5 hash of deck name to ensure unique deck IDs in Anki (french_flashcards.py:47)
 2. **French Translation Required**: Validates that French translation is provided, skips entries without translation (french_flashcards.py:56-66)
-3. **Google Sheets Integration**: Uses service account authentication to read from Google Sheets API (french_flashcards.py:171-240)
-4. **Intelligent Caching**: Hashes sheet content and skips regenerating unchanged decks (french_flashcards.py:243-294)
+3. **Audio Cleaning**: Removes parenthetical text and HTML tags before generating audio (french_flashcards.py:68-84)
+   - Strips text in parentheses: `(m)` removed from "chat (m)"
+   - Strips HTML tags: `<br>`, `<b>`, `<i>` etc. removed from audio
+   - Preserves formatted text on card while speaking clean French
+4. **Google Sheets Integration**: Uses service account authentication to read from Google Sheets API (french_flashcards.py:171-240)
+5. **Intelligent Caching**: Hashes sheet content and skips regenerating unchanged decks (french_flashcards.py:243-294)
    - Cache stored in `.sheet_cache.json`
    - Checks content hash and output file existence before processing
    - Significantly improves performance on repeated runs
-5. **Multi-Sheet Processing**: By default, processes ALL sheets in a spreadsheet, generating separate decks for each (french_flashcards.py:330-397)
-6. **Sheet Discovery**: Automatically fetches all sheet names from spreadsheet (french_flashcards.py:195-207)
-7. **Dual Input Support**: Main function detects input type (CSV vs Sheets) and loads accordingly (french_flashcards.py:301-434)
-8. **Deck Naming**: Converts filename or sheet name to title case for deck names (french_flashcards.py:290-298)
-9. **Audio Files**: Named using MD5 hash of English word to avoid special characters (french_flashcards.py:117)
-10. **Randomization**: Shuffles word order before processing to randomize flashcard order (french_flashcards.py:357, 413)
+6. **Multi-Sheet Processing**: By default, processes ALL sheets in a spreadsheet, generating separate decks for each (french_flashcards.py:330-397)
+7. **Sheet Discovery**: Automatically fetches all sheet names from spreadsheet (french_flashcards.py:195-207)
+8. **Dual Input Support**: Main function detects input type (CSV vs Sheets) and loads accordingly (french_flashcards.py:301-434)
+9. **Deck Naming**: Converts filename or sheet name to title case for deck names (french_flashcards.py:290-298)
+10. **Audio Files**: Named using MD5 hash of English word to avoid special characters (french_flashcards.py:117)
+11. **Randomization**: Shuffles word order before processing to randomize flashcard order (french_flashcards.py:360, 416)
 
 ## Recent Changes
+- **2025-10-27**: Added HTML tag stripping from audio (supports `<br>`, `<b>`, `<i>`, etc. in cards)
 - **2025-10-27**: Removed automatic translation - French translations must now be provided
 - **2025-10-27**: Removed `deep-translator` dependency (no longer needed)
 - **2025-10-27**: Removed `-t` flag and `translate_csv` function (translation mode)

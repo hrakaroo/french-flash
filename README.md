@@ -88,7 +88,7 @@ python french_flashcards.py deck/my_words.csv
 This will:
 - Generate audio pronunciation files for all French words/phrases
 - Create an Anki deck file at `output/my_words.apkg`
-- Note: Text in parentheses is kept on the card but not included in audio
+- Note: Text in parentheses `(like this)` and HTML tags `<br>` are kept on the card but excluded from audio
 
 ### Step 4: Import into Anki
 
@@ -184,11 +184,31 @@ french-flash/
 - Python 3.13 or compatible version
 - Internet connection (for TTS and Google Sheets API)
 
+## HTML Formatting
+
+You can use HTML in your French translations for better formatting:
+
+```csv
+English,French
+hello,"Bonjour<br>Salut"
+to be,"être<br><i>(irregular verb)</i>"
+important word,"<b>Important</b>"
+```
+
+**Supported HTML tags:**
+- `<br>` - Line break
+- `<b>text</b>` - Bold text
+- `<i>text</i>` - Italic text
+- `<u>text</u>` - Underlined text
+
+**Note:** HTML tags and text in parentheses are automatically excluded from audio pronunciation, so the TTS will only speak the actual French words.
+
 ## Notes
 
 - ⚠️ Always activate the virtual environment before running the script
 - 🌐 Requires an internet connection for text-to-speech and Google Sheets API
 - 📝 Text in parentheses (e.g., "chat (m)") appears on cards but is excluded from audio
+- 🎨 HTML tags (e.g., `<br>`, `<b>`) are excluded from audio but appear on cards
 - ✏️ All French translations must be provided in your CSV or Google Sheet
 - 🔊 Audio files are automatically embedded in the .apkg file
 - ☁️ Google Sheets mode requires API setup (see [GOOGLE_SHEETS_SETUP.md](GOOGLE_SHEETS_SETUP.md))

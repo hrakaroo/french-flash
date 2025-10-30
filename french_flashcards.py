@@ -71,6 +71,9 @@ class FrenchFlashcardGenerator:
             # Remove anything in parentheses before generating audio
             clean_text = re.sub(r'\([^)]*\)', '', text).strip()
 
+            # Remove HTML tags before generating audio
+            clean_text = re.sub(r'<[^>]+>', '', clean_text).strip()
+
             filepath = os.path.join(config.AUDIO_DIR, filename)
             tts = gTTS(text=clean_text, lang=config.TTS_LANGUAGE, slow=config.TTS_SLOW)
             tts.save(filepath)
