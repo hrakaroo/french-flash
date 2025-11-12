@@ -5,10 +5,12 @@ import os
 # Directories
 AUDIO_DIR = "audio"
 OUTPUT_DIR = "output"
+IMAGES_DIR = "images"
 
 # Ensure directories exist
 os.makedirs(AUDIO_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(IMAGES_DIR, exist_ok=True)
 
 # Google Text-to-Speech settings
 TTS_LANGUAGE = "fr"
@@ -17,3 +19,7 @@ TTS_SLOW = False  # Set to True for slower pronunciation
 # Google Sheets settings
 GOOGLE_CREDENTIALS_FILE = "credentials.json"  # Path to your Google service account credentials
 SHEET_CACHE_FILE = ".sheet_cache.json"  # Cache file to track sheet changes
+
+# Pexels API settings
+PEXELS_API_KEY = "fKJ3FINtN8JhqmxXxofynH56LI8DA2saM5arze8NvkuvChgFuXcWVwJp"
+ENABLE_IMAGES = True

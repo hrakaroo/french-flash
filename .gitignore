@@ -27,6 +27,12 @@ wheels/
 *.mp3
 audio/
 
+# Image files
+*.jpg
+*.jpeg
+*.png
+images/
+
 # Anki
 *.apkg
 

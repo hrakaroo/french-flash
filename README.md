@@ -10,6 +10,7 @@ A Python tool that generates Anki flashcards for learning French vocabulary. Pro
 - 🔀 Randomizes flashcard order each time you generate
 - ☁️ Google Sheets support - edit vocabulary lists online from anywhere!
 - ⚡ Intelligent caching - skips regenerating unchanged decks
+- 🖼️ Optional automatic images - adds relevant images to English vocabulary cards using Pexels
 
 ## Installation
 
@@ -49,19 +50,33 @@ This returns you to your system's default Python environment.
 
 ### Step 1: Create Your CSV File
 
-Create a CSV file with two columns: `English` and `French`
+Create a CSV file with two or three columns: `English`, `French`, and optionally `Image`
 
 ```csv
-English,French
-hello,Bonjour
-goodbye,au revoir
-cat,chat
-dog,chien
-thank you,merci
+English,French,Image
+hello,Bonjour,N
+goodbye,au revoir,N
+cat,chat,Y
+dog,chien,Yes
+thank you,merci,N
+house,maison,Y
 ```
 
 - **English column** (required): The English word or phrase
 - **French column** (required): The French translation
+- **Image column** (optional): Set to `Y` or `Yes` to fetch an image for this word
+
+**Reverse Mode (French → English):**
+You can also swap the columns to create cards where French is on the front:
+
+```csv
+French,English,Image
+Bonjour,hello,N
+au revoir,goodbye,N
+chat,cat,N
+```
+
+The script automatically detects swapped columns and creates cards accordingly!
 
 Save this file (e.g., `deck/my_words.csv`)
 
@@ -143,6 +158,11 @@ deactivate
 
 **Note**: By default, the script processes **all sheets** in your spreadsheet and generates a separate deck for each one!
 
+**Formatting in Google Sheets:**
+- **Multiline Text**: Press Alt+Enter (Cmd+Enter on Mac) to add line breaks → automatically converts to `<br>` tags
+- **Bold Text**: Press Ctrl+B (Cmd+B on Mac) to make text bold → automatically wraps with `<b></b>` tags
+- Just format naturally in Google Sheets and the script handles the HTML conversion!
+
 **Caching**: The script automatically caches sheet content hashes. On subsequent runs, it will skip regenerating decks for sheets that haven't changed, saving time and API calls.
 
 **📖 [Google Sheets Setup Guide](GOOGLE_SHEETS_SETUP.md)** - Complete instructions for setting up Google Sheets API access
@@ -153,14 +173,60 @@ The script generates:
 
 - `output/<deck_name>.apkg` - Anki deck file (ready to import)
 - `audio/*.mp3` - Audio pronunciation files (automatically included in .apkg)
+- `images/*.jpg` - Downloaded images (when enabled, automatically included in .apkg)
 
 ## Configuration
 
 Edit `config.py` to customize:
 
 - `TTS_SLOW` - Set to `True` for slower pronunciation (useful for beginners)
+- `ENABLE_IMAGES` - Set to `True` to enable automatic image fetching (requires Pexels API key)
+- `PEXELS_API_KEY` - Your free Pexels API key (get one at https://www.pexels.com/api/)
 - Directory paths
 - Language settings
+
+### Adding Images to Flashcards
+
+To enable automatic image fetching for specific vocabulary words:
+
+1. **Get a free Pexels API key**:
+   - Visit https://www.pexels.com/api/
+   - Click "Get Started" or "Sign Up"
+   - Verify your email and log in
+   - Go to your API page and copy your API key
+   - **Rate limits**: Free tier allows 200 requests per hour, 20,000 per month
+
+2. **Configure the script**:
+   - Open `config.py`
+   - Set `PEXELS_API_KEY = "your_api_key_here"`
+   - Set `ENABLE_IMAGES = True`
+
+3. **Add an Image column to your CSV or Google Sheet**:
+   - Add a third column labeled `Image`
+   - Set value to `Y` or `Yes` for words that should have images
+   - Leave blank or set to `N` for words without images
+
+   **CSV Example:**
+   ```csv
+   English,French,Image
+   cat,chat,Y
+   hello,bonjour,N
+   house,maison,Yes
+   ```
+
+   **Google Sheets Example:**
+   | English | French | Image |
+   |---------|--------|-------|
+   | cat     | chat   | Y     |
+   | hello   | bonjour| N     |
+   | house   | maison | Yes   |
+
+4. **Generate flashcards as normal**:
+   - Images will only be fetched for rows where Image = Y or Yes
+   - Only applies when English is on the front of the card (not in reverse mode)
+   - Images are cached locally to avoid re-downloading
+
+**Note**: Images work best for concrete nouns (house, cat, car) and simple verbs (running, swimming). Abstract concepts may not get relevant images.
 
 ## Project Structure
 
@@ -175,6 +241,7 @@ french-flash/
 │   ├── basic_french.csv     # Example: basic vocabulary
 │   └── perfect_one.csv      # Example: rooms in a house
 ├── audio/                   # Generated audio files
+├── images/                  # Downloaded images (when ENABLE_IMAGES=True)
 ├── output/                  # Generated Anki decks (.apkg)
 └── venv/                    # Virtual environment (created during setup)
 ```
@@ -201,19 +268,25 @@ important word,"<b>Important</b>"
 - `<i>text</i>` - Italic text
 - `<u>text</u>` - Underlined text
 
-**Note:** HTML tags and text in parentheses are automatically excluded from audio pronunciation, so the TTS will only speak the actual French words.
+**Note:**
+- HTML tags (except `<br>`) and text in parentheses are excluded from audio
+- `<br>` tags are converted to periods (`.`) in audio to create natural pauses between lines
+- The TTS will speak each line with a brief pause in between
 
 ## Notes
 
 - ⚠️ Always activate the virtual environment before running the script
 - 🌐 Requires an internet connection for text-to-speech and Google Sheets API
+- 🔄 Supports both directions: `English,French` or `French,English` (detected automatically)
 - 📝 Text in parentheses (e.g., "chat (m)") appears on cards but is excluded from audio
-- 🎨 HTML tags (e.g., `<br>`, `<b>`) are excluded from audio but appear on cards
+- 🎨 HTML tags (`<b>`, `<i>`, `<u>`) appear on cards but are excluded from audio
+- ⏸️ Line breaks (`<br>`) create natural pauses in audio (converted to periods)
 - ✏️ All French translations must be provided in your CSV or Google Sheet
 - 🔊 Audio files are automatically embedded in the .apkg file
 - ☁️ Google Sheets mode requires API setup (see [GOOGLE_SHEETS_SETUP.md](GOOGLE_SHEETS_SETUP.md))
 - 🔀 Flashcards are randomized each time you generate a deck
 - ⚡ Intelligent caching skips regenerating unchanged Google Sheets decks
+- 🖼️ Images are optional - only fetched when `ENABLE_IMAGES = True` AND the Image column is set to Y/Yes for that word
 
 ## License
 

@@ -37,15 +37,28 @@ french-flash/
 - `google-auth==2.36.0` - Google authentication
 
 ### CSV Format
+
+**Standard Format (English → French):**
 ```csv
 English,French
 cat,chat
 hello,bonjour
 house,maison
-table,une table
 ```
 
-**Note**: Both English and French columns are required. Rows without French translations will be skipped.
+**Reverse Format (French → English):**
+```csv
+French,English
+chat,cat
+bonjour,hello
+maison,house
+```
+
+**Note**:
+- Both columns are required
+- The script detects column order by headers
+- Reverse format creates cards with French on front, English on back
+- Audio always pronounces the French text
 
 ### Usage
 ```bash
@@ -64,25 +77,42 @@ python french_flashcards.py -s SPREADSHEET_ID -n "Calendar"
 
 ### Key Implementation Details
 1. **Deck ID Generation**: Uses MD5 hash of deck name to ensure unique deck IDs in Anki (french_flashcards.py:47)
-2. **French Translation Required**: Validates that French translation is provided, skips entries without translation (french_flashcards.py:56-66)
-3. **Audio Cleaning**: Removes parenthetical text and HTML tags before generating audio (french_flashcards.py:68-84)
+2. **Column Order Detection**: Automatically detects if columns are swapped (French, English vs English, French)
+   - CSV: Checks header row fieldnames (french_flashcards.py:169-172)
+   - Google Sheets: Checks header cells from grid data (french_flashcards.py:290-296)
+   - When swapped, values are remapped to show French on front, English on back
+   - AudioText field tracks which text to use for pronunciation (always French)
+3. **French Translation Required**: Validates that French translation is provided, skips entries without translation (french_flashcards.py:56-66)
+4. **Audio Cleaning**: Processes text before generating audio with intelligent pausing (french_flashcards.py:68-92)
    - Strips text in parentheses: `(m)` removed from "chat (m)"
-   - Strips HTML tags: `<br>`, `<b>`, `<i>` etc. removed from audio
-   - Preserves formatted text on card while speaking clean French
-4. **Google Sheets Integration**: Uses service account authentication to read from Google Sheets API (french_flashcards.py:171-240)
-5. **Intelligent Caching**: Hashes sheet content and skips regenerating unchanged decks (french_flashcards.py:243-294)
+   - **Line break pauses**: Converts `<br>` to `. ` (period + space) to create natural pauses in speech
+   - Removes other HTML tags: `<b>`, `<i>`, `<u>` etc. stripped from audio
+   - Cleans up double periods and extra spaces
+   - Preserves formatted text on card while speaking clean French with natural pauses
+5. **Google Sheets Integration**: Uses service account authentication to read from Google Sheets API with formatting detection (french_flashcards.py:259-338)
+   - **Bold Text Detection**: Automatically wraps bold text from Google Sheets with `<b></b>` tags (french_flashcards.py:213-255)
+   - Supports both entire cell bold and mixed formatting (some text bold, some not)
+   - Uses `fetch_sheet_metadata` with `includeGridData=True` to access formatting information
+   - **Newline Conversion**: Automatically converts newlines in Google Sheets cells to `<br>` tags
+   - Users can press Alt+Enter (Cmd+Enter on Mac) to create multiline text, Ctrl+B to make text bold
+   - All formatting is converted to HTML for proper display in Anki
+6. **Intelligent Caching**: Hashes sheet content and skips regenerating unchanged decks
    - Cache stored in `.sheet_cache.json`
    - Checks content hash and output file existence before processing
    - Significantly improves performance on repeated runs
-6. **Multi-Sheet Processing**: By default, processes ALL sheets in a spreadsheet, generating separate decks for each (french_flashcards.py:330-397)
-7. **Sheet Discovery**: Automatically fetches all sheet names from spreadsheet (french_flashcards.py:195-207)
-8. **Dual Input Support**: Main function detects input type (CSV vs Sheets) and loads accordingly (french_flashcards.py:301-434)
-9. **Deck Naming**: Converts filename or sheet name to title case for deck names (french_flashcards.py:290-298)
-10. **Audio Files**: Named using MD5 hash of English word to avoid special characters (french_flashcards.py:117)
-11. **Randomization**: Shuffles word order before processing to randomize flashcard order (french_flashcards.py:360, 416)
+7. **Multi-Sheet Processing**: By default, processes ALL sheets in a spreadsheet, generating separate decks for each
+8. **Sheet Discovery**: Automatically fetches all sheet names from spreadsheet
+9. **Dual Input Support**: Main function detects input type (CSV vs Sheets) and loads accordingly
+10. **Deck Naming**: Converts filename or sheet name to title case for deck names
+11. **Audio Files**: Named using MD5 hash of English word to avoid special characters (french_flashcards.py:128)
+12. **Randomization**: Shuffles word order before processing to randomize flashcard order
 
 ## Recent Changes
-- **2025-10-27**: Added HTML tag stripping from audio (supports `<br>`, `<b>`, `<i>`, etc. in cards)
+- **2025-10-27**: Added reverse mode - supports `French,English` column order for French→English cards
+- **2025-10-27**: Line breaks (`<br>`) converted to periods in audio for natural pauses between lines
+- **2025-10-27**: Google Sheets bold formatting automatically wraps with `<b></b>` tags
+- **2025-10-27**: Google Sheets newlines automatically convert to `<br>` tags for Anki display
+- **2025-10-27**: Added HTML tag stripping from audio (supports `<b>`, `<i>`, `<u>` in cards)
 - **2025-10-27**: Removed automatic translation - French translations must now be provided
 - **2025-10-27**: Removed `deep-translator` dependency (no longer needed)
 - **2025-10-27**: Removed `-t` flag and `translate_csv` function (translation mode)

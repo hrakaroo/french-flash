@@ -70,19 +70,74 @@ Copy this ID - you'll need it to generate flashcards.
 
 ### 6. Format Your Spreadsheet
 
-Your Google Sheet should have two columns with headers:
+Your Google Sheet should have two or three columns with headers:
 
-| English | French |
-|---------|--------|
-| hello   | Bonjour |
-| goodbye | au revoir |
-| cat     | chat |
+**Standard Format (English → French):**
 
-- **First row must be headers**: `English` and `French`
-- **English column** (required): The English word or phrase
-- **French column** (required): The French translation
-- Rows without French translations will be skipped
+| English | French | Image |
+|---------|--------|-------|
+| hello   | Bonjour | N    |
+| goodbye | au revoir | N  |
+| cat     | chat   | Y     |
+| house   | maison | Yes   |
+
+**Reverse Format (French → English):**
+
+| French  | English | Image |
+|---------|---------|-------|
+| Bonjour | hello   | N     |
+| au revoir | goodbye | N   |
+| chat    | cat     | N     |
+
+The script automatically detects which format you're using based on the column headers!
+
+- **First row must be headers**: Either `English, French` or `French, English`
+- **Both columns required**: Both translations must be provided
+- **Image column (optional)**: Add a third column labeled `Image` - set to `Y` or `Yes` to fetch images for specific words
+- **Multiline text**: Press Alt+Enter (Cmd+Enter on Mac) in a cell to add line breaks - they'll automatically convert to `<br>` tags
+- **Reverse mode**: If headers are `French, English`, cards will show French on front, English on back, with French audio
 - Each sheet in your spreadsheet can be a different deck
+
+### Using Multiline Text in Google Sheets
+
+You can enter multiple lines in a single cell:
+
+1. Double-click the cell or press F2 to edit
+2. Press **Alt+Enter** (Windows/Linux) or **Cmd+Enter** (Mac) to add a line break
+3. Continue typing on the new line
+
+**Example:**
+```
+Bonjour
+Salut
+```
+
+This will automatically be converted to `Bonjour<br>Salut` for your Anki cards!
+
+**Audio behavior:** When the audio plays, it will say "Bonjour. Salut." with a natural pause between the two words (the `<br>` is converted to a period for speech).
+
+### Using Bold Text in Google Sheets
+
+You can make text bold in your French cells:
+
+1. Select the text you want to make bold (or the entire cell)
+2. Press **Ctrl+B** (Windows/Linux) or **Cmd+B** (Mac)
+3. The script will automatically wrap it with `<b></b>` tags
+
+**Examples:**
+
+| What you see in Google Sheets | What appears in Anki |
+|-------------------------------|----------------------|
+| **important** | `<b>important</b>` → **important** |
+| Some **bold** text | `Some <b>bold</b> text` → Some **bold** text |
+| **Entire cell** | `<b>Entire cell</b>` → **Entire cell** |
+
+**Combining formatting:**
+```
+être
+(irregular verb)
+```
+With "être" in bold → `<b>être</b><br>(irregular verb)`
 
 ### 7. Install Dependencies
 
