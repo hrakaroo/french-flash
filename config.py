@@ -21,5 +21,5 @@ GOOGLE_CREDENTIALS_FILE = "credentials.json"  # Path to your Google service acco
 SHEET_CACHE_FILE = ".sheet_cache.json"  # Cache file to track sheet changes
 
 # Pexels API settings
-PEXELS_API_KEY = "fKJ3FINtN8JhqmxXxofynH56LI8DA2saM5arze8NvkuvChgFuXcWVwJp"
+PEXELS_API_KEY = ""
 ENABLE_IMAGES = True
