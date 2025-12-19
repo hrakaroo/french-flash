@@ -12,7 +12,6 @@ import argparse
 import re
 import random
 import json
-import requests
 from typing import List, Dict, Tuple, Optional
 from gtts import gTTS
 import genanki
@@ -27,7 +26,6 @@ class FrenchFlashcardGenerator:
 
     def __init__(self, deck_name: str = 'French Vocabulary'):
         self.audio_files = []
-        self.image_files = []
         self.deck_name = deck_name
 
         # Create Anki model for flashcards
@@ -38,15 +36,11 @@ class FrenchFlashcardGenerator:
                 {'name': 'English'},
                 {'name': 'French'},
                 {'name': 'Audio'},
-                {'name': 'Image'},
             ],
             templates=[
                 {
                     'name': 'Card 1',
-                    'qfmt': '''
-                        {{English}}
-                        <div class="image-container">{{Image}}</div>
-                    ''',
+                    'qfmt': '{{English}}',
                     'afmt': '{{FrontSide}}<hr id="answer">{{French}}<br>{{Audio}}',
                 },
             ],
@@ -57,16 +51,6 @@ class FrenchFlashcardGenerator:
                     text-align: center;
                     color: black;
                     background-color: white;
-                }
-                .image-container {
-                    text-align: center;
-                    margin-top: 10px;
-                }
-                .image-container img {
-                    max-width: 200px;
-                    max-height: 200px;
-                    width: auto;
-                    height: auto;
                 }
             '''
         )
@@ -117,86 +101,14 @@ class FrenchFlashcardGenerator:
             print(f"Error generating audio for '{text}': {e}")
             return ""
 
-    def search_image(self, query: str) -> Optional[str]:
-        """
-        Search for an image on Pexels and return the image URL.
-        Returns None if no suitable image found or API key not configured.
-        """
-        if not config.ENABLE_IMAGES or not config.PEXELS_API_KEY:
-            return None
-
-        try:
-            # Clean the query - remove HTML tags and text in parentheses
-            clean_query = re.sub(r'<[^>]+>', '', query)
-            clean_query = re.sub(r'\([^)]*\)', '', clean_query).strip()
-
-            # Pexels API endpoint
-            url = "https://api.pexels.com/v1/search"
-            headers = {
-                'Authorization': config.PEXELS_API_KEY
-            }
-            params = {
-                'query': clean_query,
-                'per_page': 1,
-                'orientation': 'landscape'
-            }
-
-            response = requests.get(url, headers=headers, params=params, timeout=10)
-            response.raise_for_status()
-
-            data = response.json()
-
-            if data.get('photos') and len(data['photos']) > 0:
-                # Return the medium-sized image URL
-                return data['photos'][0]['src']['medium']
-
-            return None
-
-        except Exception as e:
-            print(f"  Warning: Could not fetch image for '{query}': {e}")
-            return None
-
-    def download_image(self, url: str, word: str) -> Optional[str]:
-        """
-        Download an image from URL and save it locally.
-        Returns the filename if successful, None otherwise.
-        """
-        try:
-            # Generate filename using hash of the word
-            filename = f"{hashlib.md5(word.encode()).hexdigest()}.jpg"
-            filepath = os.path.join(config.IMAGES_DIR, filename)
-
-            # Skip if already downloaded
-            if os.path.exists(filepath):
-                self.image_files.append(filepath)
-                return filename
-
-            # Download image
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-
-            # Save to file
-            with open(filepath, 'wb') as f:
-                f.write(response.content)
-
-            self.image_files.append(filepath)
-            return filename
-
-        except Exception as e:
-            print(f"  Warning: Could not download image: {e}")
-            return None
-
-    def create_flashcard(self, english: str, french: str, audio_filename: str, image_filename: str = ""):
+    def create_flashcard(self, english: str, french: str, audio_filename: str):
         """Create an Anki flashcard."""
         # Format audio
         audio_tag = f"[sound:{audio_filename}]" if audio_filename else ""
 
-        # Format image
-        image_tag = f'<img src="{image_filename}">' if image_filename else ""
-
         note = genanki.Note(
             model=self.model,
-            fields=[english, french, audio_tag, image_tag]
+            fields=[english, french, audio_tag]
         )
         self.deck.add_note(note)
 
@@ -232,26 +144,12 @@ class FrenchFlashcardGenerator:
             # Generate audio
             generated_audio = self.generate_audio(audio_text, audio_filename)
 
-            # Fetch image if requested via Image column (only for English words on front of card)
-            image_filename = ""
-            if config.ENABLE_IMAGES and item.get('FetchImage', False) and not item.get('AudioText') == english:
-                # Only fetch image if:
-                # 1. ENABLE_IMAGES is True in config
-                # 2. FetchImage flag is True (Image column has "Y" or "Yes")
-                # 3. English is on the front (not swapped columns - AudioText == english means French on front)
-                image_url = self.search_image(english)
-                if image_url:
-                    image_filename = self.download_image(image_url, english)
-                    if image_filename:
-                        print(f"  ✓ Image added")
-
             # Create flashcard
-            self.create_flashcard(english, french, generated_audio, image_filename)
+            self.create_flashcard(english, french, generated_audio)
 
             results[english] = {
                 'french': french,
-                'audio': generated_audio,
-                'image': image_filename
+                'audio': generated_audio
             }
 
             print(f"  → {french}")
@@ -265,9 +163,9 @@ class FrenchFlashcardGenerator:
 
         output_path = os.path.join(config.OUTPUT_DIR, filename)
 
-        # Create package with audio and image files
+        # Create package with audio files
         package = genanki.Package(self.deck)
-        package.media_files = self.audio_files + self.image_files
+        package.media_files = self.audio_files
         package.write_to_file(output_path)
 
         print(f"\nAnki deck saved to: {output_path}")
@@ -288,10 +186,6 @@ def load_words_from_csv(filename: str = 'example_words.csv') -> List[Dict[str, s
                           fieldnames[1].strip().lower() == 'english')
 
         for row in reader:
-            # Check for Image column
-            image_value = row.get('Image', '').strip().lower()
-            fetch_image = image_value in ['y', 'yes']
-
             if columns_swapped:
                 # French in first column, English in second
                 # Swap them so French appears on front of card
@@ -300,16 +194,14 @@ def load_words_from_csv(filename: str = 'example_words.csv') -> List[Dict[str, s
                 words.append({
                     'English': french_text,      # Actually French - will appear on front
                     'French': english_text,      # Actually English - will appear on back
-                    'AudioText': french_text,    # French text for audio
-                    'FetchImage': fetch_image
+                    'AudioText': french_text     # French text for audio
                 })
             else:
                 # Normal: English first, French second
                 words.append({
                     'English': row['English'],
                     'French': row.get('French', '').strip(),
-                    'AudioText': row.get('French', '').strip(),
-                    'FetchImage': fetch_image
+                    'AudioText': row.get('French', '').strip()
                 })
     return words
 
@@ -409,7 +301,7 @@ def load_words_from_sheet(spreadsheet_id: str, sheet_name: str) -> List[Dict[str
         # We need to use the API directly to get formatting
         sheet_data = spreadsheet.fetch_sheet_metadata({
             'includeGridData': True,
-            'ranges': [f'{sheet_name}!A1:C']
+            'ranges': [f'{sheet_name}!A1:B']
         })
 
         # Find our sheet in the metadata
@@ -429,17 +321,13 @@ def load_words_from_sheet(spreadsheet_id: str, sheet_name: str) -> List[Dict[str
         if not row_data:
             return []
 
-        # Check header row to detect if columns are swapped and if Image column exists
+        # Check header row to detect if columns are swapped
         header_cells = row_data[0].get('values', [])
         col1_header = header_cells[0].get('formattedValue', '').strip().lower() if len(header_cells) > 0 else ''
         col2_header = header_cells[1].get('formattedValue', '').strip().lower() if len(header_cells) > 1 else ''
-        col3_header = header_cells[2].get('formattedValue', '').strip().lower() if len(header_cells) > 2 else ''
 
         # Detect if columns are swapped (French, English instead of English, French)
         columns_swapped = col1_header == 'french' and col2_header == 'english'
-
-        # Check if there's an Image column
-        has_image_column = col3_header == 'image'
 
         # Skip header row and process data rows
         words = []
@@ -460,13 +348,6 @@ def load_words_from_sheet(spreadsheet_id: str, sheet_name: str) -> List[Dict[str
             col2_cell = cells[1] if len(cells) > 1 else {}
             col2_text = col2_cell.get('formattedValue', '').strip() if columns_swapped else apply_text_formatting(col2_cell)
 
-            # Get column C (Image) value if the column exists
-            fetch_image = False
-            if has_image_column and len(cells) > 2:
-                col3_cell = cells[2] if len(cells) > 2 else {}
-                image_value = col3_cell.get('formattedValue', '').strip().lower()
-                fetch_image = image_value in ['y', 'yes']
-
             # Convert newlines to <br> tags for proper display in Anki
             col1_text = col1_text.replace('\n', '<br>')
             col2_text = col2_text.replace('\n', '<br>')
@@ -478,16 +359,14 @@ def load_words_from_sheet(spreadsheet_id: str, sheet_name: str) -> List[Dict[str
                 words.append({
                     'English': col1_text.strip(),  # Actually French - will appear on front
                     'French': col2_text.strip(),   # Actually English - will appear on back
-                    'AudioText': col1_text.strip(),  # French text for audio
-                    'FetchImage': fetch_image
+                    'AudioText': col1_text.strip()  # French text for audio
                 })
             else:
                 # Normal: Column A is English, Column B is French
                 words.append({
                     'English': col1_text.strip(),
                     'French': col2_text.strip(),
-                    'AudioText': col2_text.strip(),  # French text for audio
-                    'FetchImage': fetch_image
+                    'AudioText': col2_text.strip()  # French text for audio
                 })
 
         return words
