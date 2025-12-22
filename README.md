@@ -10,12 +10,10 @@ This project was built entirely by directing Claude through the development proc
 
 ## Two Modes of Operation
 
-This tool supports **two distinct modes**:
+This tool supports two distinct modes:
 
 1. **📄 CSV Mode** - Work with local CSV files for offline vocabulary management
 2. **☁️ Google Sheets Mode** - Edit vocabulary online and sync across devices
-
-Choose the mode that best fits your workflow!
 
 ## Features
 
@@ -90,7 +88,7 @@ au revoir,goodbye
 chat,cat
 ```
 
-The script automatically detects swapped columns and creates cards accordingly!
+The script automatically detects swapped columns and creates cards accordingly.
 
 Save this file (e.g., `deck/my_words.csv`)
 
@@ -126,7 +124,7 @@ This will:
 3. Select `output/my_words.apkg`
 4. Click "Import"
 
-Your French flashcards are now ready to study!
+Your French flashcards are now ready to study.
 
 ### Step 5: Deactivate Virtual Environment
 
@@ -227,7 +225,7 @@ deactivate
 **Rich Formatting:**
 - **Multiline Text**: Press Alt+Enter (Cmd+Enter on Mac) to add line breaks → automatically converts to `<br>` tags
 - **Bold Text**: Press Ctrl+B (Cmd+B on Mac) to make text bold → automatically wraps with `<b></b>` tags
-- Just format naturally in Google Sheets and the script handles the HTML conversion!
+- Format naturally in Google Sheets and the script handles the HTML conversion
 
 **Intelligent Caching:**
 - The script caches sheet content and skips regenerating unchanged decks
