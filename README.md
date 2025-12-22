@@ -2,14 +2,28 @@
 
 A Python tool that generates Anki flashcards for learning French vocabulary. Provide your English-French vocabulary pairs, and it generates audio pronunciation files and creates ready-to-import Anki decks.
 
+## 🤖 AI-Generated Project
+
+This project was built entirely by directing Claude through the development process. **100% of the code is AI-generated.** The project demonstrates how AI can be used as a development partner to create functional, well-documented tools.
+
+📖 For technical details and development context, see [CLAUDE.md](CLAUDE.md)
+
+## Two Modes of Operation
+
+This tool supports **two distinct modes**:
+
+1. **📄 CSV Mode** - Work with local CSV files for offline vocabulary management
+2. **☁️ Google Sheets Mode** - Edit vocabulary online and sync across devices
+
+Choose the mode that best fits your workflow!
+
 ## Features
 
 - 🔊 Generates audio pronunciation files using Google Text-to-Speech
 - 📇 Creates Anki flashcard decks (.apkg) ready to import
 - ✏️ Requires French translations to be provided for all entries
 - 🔀 Randomizes flashcard order each time you generate
-- ☁️ Google Sheets support - edit vocabulary lists online from anywhere!
-- ⚡ Intelligent caching - skips regenerating unchanged decks
+- ⚡ Intelligent caching for Google Sheets - skips regenerating unchanged decks
 
 ## Installation
 
@@ -45,12 +59,17 @@ deactivate
 
 This returns you to your system's default Python environment.
 
-## Creating a Deck: Complete Workflow
+---
+
+## Mode 1: CSV Files (Local)
+
+Use CSV mode when you want to work with local files on your computer. Perfect for offline use or when you prefer working with spreadsheet software like Excel or Numbers.
 
 ### Step 1: Create Your CSV File
 
 Create a CSV file with two columns: `English` and `French`
 
+**Standard Format (English → French):**
 ```csv
 English,French
 hello,Bonjour
@@ -61,10 +80,7 @@ thank you,merci
 house,maison
 ```
 
-- **English column** (required): The English word or phrase
-- **French column** (required): The French translation
-
-**Reverse Mode (French → English):**
+**Reverse Format (French → English):**
 You can also swap the columns to create cards where French is on the front:
 
 ```csv
@@ -120,50 +136,134 @@ When finished:
 deactivate
 ```
 
-## Quick Reference
+---
 
-### CSV Files (Local)
+## Mode 2: Google Sheets (Online)
 
-```bash
-# Activate virtual environment
-source venv/bin/activate
+Use Google Sheets mode when you want to edit vocabulary online, sync across devices, or collaborate with others. Requires one-time API setup.
 
-# Generate flashcard deck from CSV
-python french_flashcards.py deck/my_words.csv
+### Prerequisites
 
-# Show help
-python french_flashcards.py --help
+Before using Google Sheets mode, you must complete the Google Sheets API setup:
 
-# Deactivate virtual environment when done
-deactivate
+📖 **[Complete Google Sheets Setup Guide](GOOGLE_SHEETS_SETUP.md)** - Follow this guide first to set up API access
+
+### Step 1: Create Your Google Sheet
+
+1. Create a new Google Sheet or open an existing one
+2. Format it with two columns: `English` and `French` (or `French` and `English`)
+
+**Example Google Sheet:**
+
+| English | French |
+|---------|--------|
+| hello | Bonjour |
+| goodbye | au revoir |
+| cat | chat |
+| dog | chien |
+
+### Step 2: Share the Sheet with Your Service Account
+
+After completing the API setup, you'll have a service account email (looks like `something@project-name.iam.gserviceaccount.com`).
+
+1. Click the "Share" button in your Google Sheet
+2. Paste the service account email
+3. Give it "Viewer" or "Editor" access
+4. Click "Send"
+
+### Step 3: Get Your Spreadsheet ID
+
+The Spreadsheet ID is in the URL of your Google Sheet:
+
+```
+https://docs.google.com/spreadsheets/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/edit
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^
+                                  This is your Spreadsheet ID
 ```
 
-### Google Sheets (Online)
+Copy this ID - you'll need it to generate decks.
+
+### Step 4: Activate Virtual Environment
 
 ```bash
-# Activate virtual environment
-source venv/bin/activate
+# Navigate to the project directory
+cd /path/to/french-flash
 
-# Generate flashcard decks from ALL sheets in spreadsheet
+# Activate the virtual environment
+source venv/bin/activate
+```
+
+### Step 5: Generate Anki Decks
+
+**Option A: Generate from ALL sheets in the spreadsheet**
+```bash
 python french_flashcards.py -s YOUR_SPREADSHEET_ID
+```
 
-# Generate from only a specific sheet
-python french_flashcards.py -s YOUR_SPREADSHEET_ID -n "Calendar"
+This will create a separate .apkg file for each sheet in your spreadsheet.
 
-# Deactivate virtual environment when done
+**Option B: Generate from ONE specific sheet**
+```bash
+python french_flashcards.py -s YOUR_SPREADSHEET_ID -n "Sheet Name"
+```
+
+Replace `"Sheet Name"` with the exact name of your sheet tab.
+
+### Step 6: Import into Anki
+
+1. Open Anki
+2. Click "File" → "Import"
+3. Select the generated `.apkg` file(s) from the `output/` directory
+4. Click "Import"
+
+### Step 7: Deactivate Virtual Environment
+
+```bash
 deactivate
 ```
 
-**Note**: By default, the script processes **all sheets** in your spreadsheet and generates a separate deck for each one!
+### Google Sheets Features
 
-**Formatting in Google Sheets:**
+**Rich Formatting:**
 - **Multiline Text**: Press Alt+Enter (Cmd+Enter on Mac) to add line breaks → automatically converts to `<br>` tags
 - **Bold Text**: Press Ctrl+B (Cmd+B on Mac) to make text bold → automatically wraps with `<b></b>` tags
 - Just format naturally in Google Sheets and the script handles the HTML conversion!
 
-**Caching**: The script automatically caches sheet content hashes. On subsequent runs, it will skip regenerating decks for sheets that haven't changed, saving time and API calls.
+**Intelligent Caching:**
+- The script caches sheet content and skips regenerating unchanged decks
+- Only sheets that have been modified will be regenerated
+- Saves time and reduces API calls on repeated runs
 
-**📖 [Google Sheets Setup Guide](GOOGLE_SHEETS_SETUP.md)** - Complete instructions for setting up Google Sheets API access
+**Multiple Sheets:**
+- Organize different topics/lessons in separate sheets within one spreadsheet
+- Generate all decks at once with `-s SPREADSHEET_ID`
+- Or generate one specific deck with `-s SPREADSHEET_ID -n "Sheet Name"`
+
+---
+
+## Quick Reference
+
+### CSV Mode
+```bash
+source venv/bin/activate                          # Activate environment
+python french_flashcards.py deck/my_words.csv     # Generate deck
+deactivate                                         # Deactivate when done
+```
+
+### Google Sheets Mode
+```bash
+source venv/bin/activate                          # Activate environment
+python french_flashcards.py -s SPREADSHEET_ID     # All sheets
+python french_flashcards.py -s SPREADSHEET_ID -n "Calendar"  # One sheet
+deactivate                                         # Deactivate when done
+```
+
+### Get Help
+```bash
+python french_flashcards.py --help
+```
+
+---
 
 ## Output Files
 
@@ -171,6 +271,8 @@ The script generates:
 
 - `output/<deck_name>.apkg` - Anki deck file (ready to import)
 - `audio/*.mp3` - Audio pronunciation files (automatically included in .apkg)
+
+**Note**: In Google Sheets mode, each sheet creates a separate .apkg file named after the sheet.
 
 ## Configuration
 
@@ -202,10 +304,15 @@ french-flash/
 - Python 3.13 or compatible version
 - Internet connection (for TTS and Google Sheets API)
 
-## HTML Formatting
+---
 
-You can use HTML in your French translations for better formatting:
+## Advanced Features
 
+### HTML Formatting
+
+You can use HTML in your French translations for better formatting in **both CSV and Google Sheets modes**:
+
+**In CSV files:**
 ```csv
 English,French
 hello,"Bonjour<br>Salut"
@@ -213,30 +320,55 @@ to be,"être<br><i>(irregular verb)</i>"
 important word,"<b>Important</b>"
 ```
 
+**In Google Sheets:**
+- Use keyboard shortcuts (Ctrl+B for bold, Alt+Enter for line breaks)
+- Or manually add HTML tags in cells
+- Formatting is automatically converted to HTML
+
 **Supported HTML tags:**
 - `<br>` - Line break
 - `<b>text</b>` - Bold text
 - `<i>text</i>` - Italic text
 - `<u>text</u>` - Underlined text
 
-**Note:**
+**Audio Behavior:**
 - HTML tags (except `<br>`) and text in parentheses are excluded from audio
 - `<br>` tags are converted to periods (`.`) in audio to create natural pauses between lines
 - The TTS will speak each line with a brief pause in between
 
-## Notes
+### Column Order Detection
 
+The script automatically detects whether you're using:
+- `English,French` → Creates cards with English on front, French on back
+- `French,English` → Creates cards with French on front, English on back
+
+Audio pronunciation always uses the French text, regardless of column order.
+
+### Randomization
+
+Flashcards are randomized each time you generate a deck to improve learning retention.
+
+---
+
+## Important Notes
+
+### General
 - ⚠️ Always activate the virtual environment before running the script
-- 🌐 Requires an internet connection for text-to-speech and Google Sheets API
-- 🔄 Supports both directions: `English,French` or `French,English` (detected automatically)
-- 📝 Text in parentheses (e.g., "chat (m)") appears on cards but is excluded from audio
-- 🎨 HTML tags (`<b>`, `<i>`, `<u>`) appear on cards but are excluded from audio
-- ⏸️ Line breaks (`<br>`) create natural pauses in audio (converted to periods)
+- 🌐 Requires an internet connection for text-to-speech
 - ✏️ All French translations must be provided in your CSV or Google Sheet
 - 🔊 Audio files are automatically embedded in the .apkg file
-- ☁️ Google Sheets mode requires API setup (see [GOOGLE_SHEETS_SETUP.md](GOOGLE_SHEETS_SETUP.md))
 - 🔀 Flashcards are randomized each time you generate a deck
-- ⚡ Intelligent caching skips regenerating unchanged Google Sheets decks
+
+### CSV Mode Specific
+- 📄 Works completely offline (except for audio generation)
+- 💾 Store CSV files in the `deck/` directory for organization
+
+### Google Sheets Mode Specific
+- ☁️ Requires one-time API setup (see [GOOGLE_SHEETS_SETUP.md](GOOGLE_SHEETS_SETUP.md))
+- 🌐 Requires internet connection to fetch sheet data
+- ⚡ Intelligent caching skips regenerating unchanged sheets
+- 📊 Processes all sheets by default; use `-n` to target a specific sheet
+- 🔄 Edit your sheet online and regenerate anytime
 
 ## License
 
