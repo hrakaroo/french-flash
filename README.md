@@ -4,7 +4,7 @@ A Python tool that generates Anki flashcards for learning French vocabulary. Pro
 
 ## 🤖 AI-Generated Project
 
-This project was built entirely by directing Claude through the development process. **100% of the code is AI-generated.** The project demonstrates how AI can be used as a development partner to create functional, well-documented tools.
+This project was built entirely by directing Claude through the development process. **100% of the code is AI-generated.** This was a test project to see how AI can be used as a development partner to create functional, well-documented tools.
 
 📖 For technical details and development context, see [CLAUDE.md](CLAUDE.md)
 
