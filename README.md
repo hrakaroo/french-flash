@@ -15,6 +15,62 @@ This tool supports two distinct modes:
 1. **📄 CSV Mode** - Work with local CSV files for offline vocabulary management
 2. **☁️ Google Sheets Mode** - Edit vocabulary online and sync across devices
 
+## How It Works
+
+### Column Order
+
+The script supports two column arrangements:
+
+**English → French (Standard)**
+```
+English,French
+hello,Bonjour
+cat,chat
+```
+- **Card front**: English word
+- **Card back**: French translation
+- **Audio**: Pronounces the French word
+
+**French → English (Reverse)**
+```
+French,English
+Bonjour,hello
+chat,cat
+```
+- **Card front**: French word
+- **Card back**: English translation
+- **Audio**: Pronounces the French word
+
+The script automatically detects which column order you're using based on the header row. Audio always pronounces the French text, regardless of which side of the card it appears on.
+
+### Formatting Options
+
+You can enhance your flashcards with HTML formatting and special text handling:
+
+**HTML Tags:**
+- `<br>` - Line break (creates visual separation on cards)
+- `<b>text</b>` - Bold text
+- `<i>text</i>` - Italic text
+- `<u>text</u>` - Underlined text
+
+**Parentheses:**
+- Text in parentheses `(like this)` appears on the card but is excluded from audio pronunciation
+- Useful for grammar notes: `chat (m)` displays fully but pronounces only "chat"
+
+**Audio Behavior:**
+- HTML tags (except `<br>`) are removed from audio
+- Text in parentheses is removed from audio
+- `<br>` tags are converted to periods (`.`) in audio, creating natural pauses between lines
+
+**Example:**
+```csv
+English,French
+to be,"être<br><i>(irregular verb)</i>"
+cat,"chat (m)"
+```
+- Cards display formatted text with line breaks and italics
+- Audio pronounces only "être" and "chat" with natural pausing
+
 ## Features
 
 - 🔊 Generates audio pronunciation files using Google Text-to-Speech
@@ -302,49 +358,6 @@ french-flash/
 - Python 3.13 or compatible version
 - Internet connection (for TTS and Google Sheets API)
 
----
-
-## Advanced Features
-
-### HTML Formatting
-
-You can use HTML in your French translations for better formatting in **both CSV and Google Sheets modes**:
-
-**In CSV files:**
-```csv
-English,French
-hello,"Bonjour<br>Salut"
-to be,"être<br><i>(irregular verb)</i>"
-important word,"<b>Important</b>"
-```
-
-**In Google Sheets:**
-- Use keyboard shortcuts (Ctrl+B for bold, Alt+Enter for line breaks)
-- Or manually add HTML tags in cells
-- Formatting is automatically converted to HTML
-
-**Supported HTML tags:**
-- `<br>` - Line break
-- `<b>text</b>` - Bold text
-- `<i>text</i>` - Italic text
-- `<u>text</u>` - Underlined text
-
-**Audio Behavior:**
-- HTML tags (except `<br>`) and text in parentheses are excluded from audio
-- `<br>` tags are converted to periods (`.`) in audio to create natural pauses between lines
-- The TTS will speak each line with a brief pause in between
-
-### Column Order Detection
-
-The script automatically detects whether you're using:
-- `English,French` → Creates cards with English on front, French on back
-- `French,English` → Creates cards with French on front, English on back
-
-Audio pronunciation always uses the French text, regardless of column order.
-
-### Randomization
-
-Flashcards are randomized each time you generate a deck to improve learning retention.
 
 ---
 
