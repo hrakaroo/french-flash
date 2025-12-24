@@ -68,15 +68,6 @@ https://docs.google.com/spreadsheets/d/1A2B3C4D5E6F7G8H9I0J/edit
 
 Copy this ID - you'll need it to generate flashcards.
 
-### 6. Install Dependencies
-
-Update your Python packages:
-
-```bash
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
 ## Usage
 
 ### Generate Flashcards from Google Sheets
@@ -95,20 +86,7 @@ python french_flashcards.py -s 1A2B3C4D5E6F7G8H9I0J
 python french_flashcards.py -s 1A2B3C4D5E6F7G8H9I0J -n "Calendar"
 ```
 
-### Examples
-
-```bash
-# Generate decks from ALL sheets in the spreadsheet
-python french_flashcards.py -s 1A2B3C4D5E6F7G8H9I0J
-
-# Generate from only the "Verbs" sheet
-python french_flashcards.py -s 1A2B3C4D5E6F7G8H9I0J -n Verbs
-
-# Generate from only the "Common Phrases" sheet
-python french_flashcards.py -s 1A2B3C4D5E6F7G8H9I0J -n "Common Phrases"
-```
-
-**Default Behavior**: When you don't specify a sheet name with `-n`, the script will automatically process **all sheets** in your spreadsheet and generate a separate `.apkg` deck file for each one!
+**Default Behavior**: When you don't specify a sheet name with `-n`, the script will automatically process **all sheets** in your spreadsheet and generate a separate `.apkg` deck file for each one.
 
 ### Caching & Performance
 
@@ -184,26 +162,3 @@ This will automatically generate 4 separate deck files:
 - Keep your service account credentials secure
 - Only share spreadsheets with the service account email (not your personal email)
 - If credentials are compromised, delete the service account and create a new one
-
-## CSV vs Google Sheets
-
-| Feature | CSV | Google Sheets |
-|---------|-----|---------------|
-| Edit anywhere | ❌ No | ✅ Yes |
-| Requires internet | ❌ No | ✅ Yes |
-| Setup complexity | ✅ Simple | ⚠️ Moderate |
-| Intelligent caching | ❌ No | ✅ Yes |
-| Collaboration | ❌ No | ✅ Yes |
-| Multi-sheet support | ❌ No | ✅ Yes |
-
-## Still Using CSV?
-
-CSV files still work great! You can use both methods:
-
-```bash
-# Use CSV
-python french_flashcards.py deck/basic_fifty.csv
-
-# Use Google Sheets
-python french_flashcards.py -s YOUR_SPREADSHEET_ID
-```
