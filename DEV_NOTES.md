@@ -1,0 +1,65 @@
+
+# Working with Claude
+
+These are just some of my quick personal notes on developing the
+project with Claude. These notes are the only part of this project
+which are not AI created.
+
+## Context
+
+I'm in the process of learning to speak French and, from experience, I
+learn best by using flash cards. I knew I wanted to create cards from
+my vocabulary words and I wanted to include the French pronunciation.
+
+## Claude
+
+I had already purchased a license to use Claude so I started off by
+just asking Claude for a suggested flash card system. I said I wanted
+a system that would allow me to create my own cards, supported audio,
+was ad-free and, ideally, didn't require a subscription (although a
+one-time-purchase was okay).
+
+Claude recommended Anki, which I had already heard about but hadn't
+really looked into yet.
+
+I also asked Claude for the best language to use for building my cards
+and it recommended python.
+
+So I had it create a project in python for building Anki flash cards.
+
+## Development process
+
+With the basic project created we started to iteratively build the project.
+
+The first step was just creating a script which could parse a CSV
+file.
+
+With the CSV file parsing I then told Claude to build the Anki card deck.
+
+I then added on the ability to swap the order of the words.
+
+Adding the audio was equally as easy. I just asked Claude which
+service I should use, it suggested Google and gave me complete
+instructions.
+
+Lastly I decided I wanted to move it all to a Google Sheet and again
+asked Claude to walk me through the steps I needed to take to get this
+working on the google side. Claude updated all the code.
+
+## Thoughts
+
+This worked amazingly well. By taking Claude through the development
+steps one by one I was able to verify things along the way and get to
+a working solution rather quickly. The only areas where Claude seemed
+to have a hard time is not cleaning up things unless I specifically
+asked it to. At one point I had it also generating images for the
+slides, but ended up abandoning that idea. Although Claude removed
+the code, it left the documentation in. I also noticed it created
+redundant documentation in multiple markdown files. All of this was
+easy enough to clean up by _telling_ Claude to clean it up, but it's
+just a reminder of it's limitations.
+
+For the creation of the flash cards I also used Claude to come up with
+a list of the 50 most common nouns and verbs and I split those words
+into my Google Sheets.
+
