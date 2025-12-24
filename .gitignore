@@ -27,14 +27,15 @@ wheels/
 *.mp3
 audio/
 
-# Image files
-*.jpg
-*.jpeg
-*.png
-images/
-
-# Anki
+# Anki decks
 *.apkg
+output/
+
+# Google API credentials
+credentials.json
+
+# Cache files
+.sheet_cache.json
 
 # IDE
 .vscode/
@@ -45,13 +46,5 @@ images/
 # Environment
 .env
 
-# Google API credentials
-credentials.json
-
-# Cache files
-.sheet_cache.json
-
-# Data files
-!example_words.csv
-output/
+# macOS
 .DS_Store

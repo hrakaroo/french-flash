@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 French Flashcard Generator
-Translates English words to French, generates audio pronunciation,
-and creates Anki flashcards.
+Generates audio pronunciation and creates Anki flashcards from
+English-French vocabulary pairs.
 """
 
 import os

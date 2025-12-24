@@ -42,8 +42,10 @@ Using Google Sheets allows you to:
 ### 3. Install the Credentials File
 
 1. Rename the downloaded JSON file to `credentials.json`
-2. Move it to your `french-flash` project directory
+2. Move it to your `french-flash` project directory (same directory as `french_flashcards.py`)
 3. **Important**: This file contains sensitive credentials - never share it or commit it to git!
+
+**Note**: A template file `credentials.json.example` is provided in the project for reference, but you must use your actual credentials file downloaded from Google Cloud Console.
 
 ### 4. Share Your Spreadsheet
 

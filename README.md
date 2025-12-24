@@ -343,14 +343,13 @@ french-flash/
 ├── french_flashcards.py    # Main script
 ├── config.py                # Configuration settings
 ├── requirements.txt         # Python dependencies
-├── deck/                    # Your CSV files
-│   ├── a_year.csv           # Example: days, months, seasons
-│   ├── basic_fifty.csv      # Example: 50 common words
-│   ├── basic_french.csv     # Example: basic vocabulary
-│   └── perfect_one.csv      # Example: rooms in a house
-├── audio/                   # Generated audio files
-├── output/                  # Generated Anki decks (.apkg)
-└── venv/                    # Virtual environment (created during setup)
+├── README.md                # This file - user documentation
+├── CLAUDE.md                # Technical documentation
+├── GOOGLE_SHEETS_SETUP.md   # Google Sheets API setup guide
+├── deck/                    # CSV vocabulary files (optional)
+├── audio/                   # Generated audio files (auto-created)
+├── output/                  # Generated Anki decks (auto-created)
+└── venv/                    # Virtual environment (auto-created)
 ```
 
 ## Requirements
